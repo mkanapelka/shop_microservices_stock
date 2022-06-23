@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from stock.models import Product, Characteristic, Category
+
+admin.site.regicter(Product)
+admin.site.regicter(Category)
+admin.site.regicter(Characteristic)

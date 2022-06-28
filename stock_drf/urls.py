@@ -16,6 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from stock.views.product import ProductApiView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/products/', ProductApiView.as_view())
 ]

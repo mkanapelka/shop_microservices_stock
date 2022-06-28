@@ -24,6 +24,8 @@ SECRET_KEY = 'django-insecure-m(l&hv8t)qfy!f+vew6821hzr!!bmk$y%l^i+=wt0ooqt)zpof
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+DEFAULT_CHARSET = 'utf-8'
+
 ALLOWED_HOSTS = []
 
 # Application definition
@@ -122,3 +124,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'UNICODE_JSON': True,
+    'STRICT_JSON': True,
+}

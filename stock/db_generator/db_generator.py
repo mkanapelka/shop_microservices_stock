@@ -8,7 +8,7 @@ class DbGeneratorService:
     @staticmethod
     def read_words_from_file(path: str) -> list:
         with open(path, 'r', encoding="utf8") as file:
-            return file.readlines()
+            return [line[:len(line)-1] for line in file.readlines() if line.endswith('\n')]
 
     @staticmethod
     def put_categories() -> list:

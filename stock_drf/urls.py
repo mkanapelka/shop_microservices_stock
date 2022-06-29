@@ -16,9 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from stock.views.category import CategoryApiView
+from stock.views.characteristic import CharacteristicApiView
 from stock.views.product import ProductApiView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/products/', ProductApiView.as_view())
+    path('api/v1/products/', ProductApiView.as_view()),
+    path('api/v1/categories/', CategoryApiView.as_view()),
+    path('api/v1/characteristics/', CharacteristicApiView.as_view()),
 ]

@@ -16,7 +16,11 @@ class Product(Base):
     status = models.CharField(max_length=50,
                               choices=ProductStatus.choices,
                               default=ProductStatus.AVAILABLE)
-    category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name="category_id", db_index=True)
+    category = models.ForeignKey(Category,
+                                 on_delete=models.PROTECT,
+                                 verbose_name="category_id",
+                                 db_index=True,
+                                 related_name='product')
     characteristic = models.ManyToManyField(Characteristic,
                                             db_table="links_product_to_characteristic",
                                             related_name="+")

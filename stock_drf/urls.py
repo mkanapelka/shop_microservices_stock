@@ -14,15 +14,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 
 from stock.views.category import CategoryApiView
 from stock.views.characteristic import CharacteristicApiView
-from stock.views.product import ProductApiView
+from stock.views.product import ProductApiUpdateQuantitySet
+
+product_router = routers.SimpleRouter()
+product_router.register(r'products', ProductApiUpdateQuantitySet)
+print(product_router.urls)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/products/', ProductApiView.as_view()),
+
+    path('api/v1/', include(product_router.urls)),
+
     path('api/v1/categories/', CategoryApiView.as_view()),
     path('api/v1/characteristics/', CharacteristicApiView.as_view()),
 ]

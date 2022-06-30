@@ -1,15 +1,39 @@
-from rest_framework import generics
+from rest_framework import mixins
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from stock.models import Product, Category
 from stock.serializers.product import ProductSerializer
 
 
-class ProductApiView(generics.ListAPIView):
+class ProductApiUpdateQuantitySet(mixins.ListModelMixin,
+                                  mixins.RetrieveModelMixin,
+                                  GenericViewSet):
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    def get_queryset(self):
+    def filter_queryset(self, queryset):
         queryset = Product.objects.all()
         return self.__get_dynamic_queryset(queryset)
+
+    @action(methods=['patch'], detail=True)
+    def update_quantity(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        product: Product = Product.objects.get(pk=pk)
+        received_quantity: int = request.data['quantity']
+
+        if received_quantity is None:
+            raise "Quantity didn't received"
+
+        new_quantity: int = product.quantity + received_quantity
+
+        if new_quantity < 0:
+            raise "Invalid quantity"
+
+        product.quantity = new_quantity
+        product = product.save()
+        return Response(product)
 
     def __get_dynamic_queryset(self, queryset):
         name: str = self.request.query_params.get('name')
@@ -41,6 +65,3 @@ class ProductApiView(generics.ListAPIView):
             queryset = queryset.filter(category__name__startswith=category_name)
 
         return queryset
-
-
-

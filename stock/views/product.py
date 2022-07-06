@@ -1,15 +1,19 @@
-from rest_framework import mixins
+from typing import io
+
+from django.db import transaction
+from rest_framework import mixins, serializers, status
 from rest_framework.decorators import action
+from rest_framework.parsers import FileUploadParser, MultiPartParser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet
 
 from stock.models import Product, Category
 from stock.serializers.product import ProductSerializer
 
 
-class ProductApiUpdateQuantitySet(mixins.ListModelMixin,
-                                  mixins.RetrieveModelMixin,
-                                  GenericViewSet):
+class ProductApiViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        GenericViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -23,16 +27,13 @@ class ProductApiUpdateQuantitySet(mixins.ListModelMixin,
         product: Product = Product.objects.get(pk=pk)
         received_quantity: int = request.data['quantity']
 
-        if received_quantity is None:
-            raise "Quantity didn't received"
+        if self.__quantity_validation(received_quantity):
 
-        new_quantity: int = product.quantity + received_quantity
-
-        if new_quantity < 0:
-            raise "Invalid quantity"
-
-        product.quantity = new_quantity
-        product = product.save()
+            new_quantity: int = product.quantity + received_quantity
+            if new_quantity < 0:
+                raise "Not enough quantity at stock"
+            product.quantity = new_quantity
+            product = product.save()
         return Response(product)
 
     def __get_dynamic_queryset(self, queryset):
@@ -65,3 +66,49 @@ class ProductApiUpdateQuantitySet(mixins.ListModelMixin,
             queryset = queryset.filter(category__name__startswith=category_name)
 
         return queryset
+
+    def __quantity_validation(self, received_quantity: int) -> bool:
+        if type(received_quantity) != int:
+            raise serializers.ValidationError("Quantity must be int")
+        if received_quantity is None:
+            raise serializers.ValidationError("Quantity must be")
+        return True
+
+
+class ProductAdminApiViewSet(GenericViewSet):
+    SEPARATOR: str = ';'
+    queryset = Product.objects.all()
+    parser_classes = (MultiPartParser,)
+
+    @transaction.atomic()
+    @action(methods=['put'], url_path='upload', detail=True)
+    def add_products_from_file(self, request, *args, **kwargs):
+        file_uploaded = request.FILES.get('file')
+        if file_uploaded is None:
+            raise Exception("File wasn't uploaded")
+        self.__processing_uploaded_file(file_uploaded)
+        return Response(status=status.HTTP_200_OK)
+
+    def __processing_uploaded_file(self, file: io.BinaryIO) -> None:
+        try:
+            for line in file.readlines():
+                self.__processing_product_line(line.decode('utf-8'))
+        finally:
+            file.close()
+
+    def __processing_product_line(self, line: str) -> None:
+        values: list = self.__is_valid_line(line)
+        Product.objects.create(name=values[0],
+                               cost=int(values[1]),
+                               quantity=int(values[2]),
+                               status=values[3],
+                               category_id=int(values[4]))
+
+    def __is_valid_line(self, line: str) -> list:
+        line.strip()
+        if line is None or line == '':
+            raise Exception("Incorrect line, please review file")
+        values: list = line.split(ProductAdminApiViewSet.SEPARATOR)
+        if len(values) != 5:
+            raise Exception("Incorrect line, please review file")
+        return values

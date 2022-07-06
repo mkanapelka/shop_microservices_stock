@@ -19,16 +19,20 @@ from rest_framework import routers
 
 from stock.views.category import CategoryApiView
 from stock.views.characteristic import CharacteristicApiView
-from stock.views.product import ProductApiUpdateQuantitySet
+from stock.views.product import ProductApiViewSet, ProductAdminApiViewSet
 
 product_router = routers.SimpleRouter()
-product_router.register(r'products', ProductApiUpdateQuantitySet)
+product_admin_router = routers.SimpleRouter()
+product_router.register(r'products', ProductApiViewSet)
+product_admin_router.register(r'products_admin', ProductAdminApiViewSet)
 print(product_router.urls)
+print(product_admin_router.urls)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('api/v1/', include(product_router.urls)),
+    path('api/v1/', include(product_admin_router.urls)),
 
     path('api/v1/categories/', CategoryApiView.as_view()),
     path('api/v1/characteristics/', CharacteristicApiView.as_view()),

@@ -13,8 +13,8 @@ class Product(Base):
         DELETED = 'DELETED'
 
     name = models.CharField(max_length=255, unique=True)
-    cost = models.IntegerField(validators=[MinValueValidator(0, 'cost should be >= 0')])
-    quantity = models.IntegerField(validators=[MinValueValidator(0, 'quantity should be >= 0')])
+    cost = models.IntegerField(validators=[MinValueValidator(0)])
+    quantity = models.IntegerField(validators=[MinValueValidator(0)])
     status = models.CharField(max_length=50,
                               choices=ProductStatus.choices,
                               default=ProductStatus.AVAILABLE)

@@ -19,12 +19,14 @@ from rest_framework import routers
 
 from stock.views.category import CategoryApiView
 from stock.views.characteristic import CharacteristicApiView
-from stock.views.product import ProductApiViewSet, ProductAdminApiViewSet
+from stock.views.product import ProductAdminApiViewSet, ProductApiViewSet
 
 product_router = routers.SimpleRouter()
 product_admin_router = routers.SimpleRouter()
+
 product_router.register(r'products', ProductApiViewSet)
 product_admin_router.register(r'products_admin', ProductAdminApiViewSet)
+
 print(product_router.urls)
 print(product_admin_router.urls)
 

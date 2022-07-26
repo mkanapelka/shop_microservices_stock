@@ -3,7 +3,7 @@ from typing import io
 from django.db import transaction
 from rest_framework import mixins, serializers, status
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -17,6 +17,7 @@ class ProductApiViewSet(mixins.ListModelMixin,
                         GenericViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    parser_classes = (JSONParser,)
 
     def filter_queryset(self, queryset):
         queryset = Product.objects.all()
@@ -26,13 +27,12 @@ class ProductApiViewSet(mixins.ListModelMixin,
     def update_quantity(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
         product: Product = Product.objects.get(pk=pk)
-        received_quantity: int = request.data['quantity']
+        received_quantity: int = request.data.get('quantity', None)
 
         if self.__quantity_validation(received_quantity):
-
             new_quantity: int = product.quantity + received_quantity
             if new_quantity < 0:
-                raise "Not enough quantity at stock"
+                raise Exception("Not enough quantity at stock")
             product.quantity = new_quantity
             product = product.save()
         return Response(product)
@@ -69,15 +69,20 @@ class ProductApiViewSet(mixins.ListModelMixin,
         return queryset
 
     def __quantity_validation(self, received_quantity: int) -> bool:
+        if received_quantity is None:
+            raise serializers.ValidationError("Quantity didn't receive")
         if type(received_quantity) != int:
             raise serializers.ValidationError("Quantity must be int")
-        if received_quantity is None:
-            raise serializers.ValidationError("Quantity must be")
         return True
 
 
 class ProductAdminApiViewSet(GenericViewSet):
     SEPARATOR: str = ';'
+    NAME_IDX: int = 0
+    COST_IDX: int = 1
+    QUANTITY_IDX: int = 2
+    STATUS_IDX: int = 3
+    CATEGORY_ID_IDX: int = 4
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     parser_classes = (MultiPartParser,)
@@ -100,11 +105,11 @@ class ProductAdminApiViewSet(GenericViewSet):
 
     def __processing_product_line(self, line: str) -> None:
         values: list = self.__is_valid_line(line)
-        Product.objects.create(name=values[0],
-                               cost=int(values[1]),
-                               quantity=int(values[2]),
-                               status=values[3],
-                               category_id=int(values[4]))
+        Product.objects.create(name=values[ProductAdminApiViewSet.NAME_IDX],
+                               cost=int(values[ProductAdminApiViewSet.COST_IDX]),
+                               quantity=int(values[ProductAdminApiViewSet.QUANTITY_IDX]),
+                               status=values[ProductAdminApiViewSet.STATUS_IDX],
+                               category_id=int(values[ProductAdminApiViewSet.CATEGORY_ID_IDX]))
 
     def __is_valid_line(self, line: str) -> list:
         line.strip()

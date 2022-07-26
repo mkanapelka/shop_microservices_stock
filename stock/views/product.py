@@ -106,19 +106,23 @@ class ProductAdminApiViewSet(GenericViewSet):
             file.close()
 
     def __processing_product_line(self, line: str) -> None:
-        min_value_validator = MinValueValidator(0, message='value must be over 0')
         values: list = self.__is_valid_line(line)
         Product.objects.create(name=values[ProductAdminApiViewSet.NAME_IDX],
-                               cost=min_value_validator(int(values[ProductAdminApiViewSet.COST_IDX])),
-                               quantity=min_value_validator(int(values[ProductAdminApiViewSet.QUANTITY_IDX])),
+                               cost=int(values[ProductAdminApiViewSet.COST_IDX]),
+                               quantity=int(values[ProductAdminApiViewSet.QUANTITY_IDX]),
                                status=values[ProductAdminApiViewSet.STATUS_IDX],
                                category_id=int(values[ProductAdminApiViewSet.CATEGORY_ID_IDX]))
 
     def __is_valid_line(self, line: str) -> list:
+        min_value_validator = MinValueValidator(0, message='value must be over 0')
         line.strip()
         if line is None or line == '':
             raise Exception("Incorrect line, please review file")
         values: list = line.split(ProductAdminApiViewSet.SEPARATOR)
         if len(values) != 5:
             raise Exception("Incorrect line, please review file")
+        cost: int = int(values[ProductAdminApiViewSet.COST_IDX])
+        quantity: int = int(values[ProductAdminApiViewSet.QUANTITY_IDX])
+        min_value_validator(cost)
+        min_value_validator(quantity)
         return values

@@ -1,6 +1,7 @@
 from typing import io
 
 from django.db import transaction
+from django.core.validators import MinValueValidator
 from rest_framework import mixins, serializers, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, JSONParser
@@ -43,7 +44,7 @@ class ProductApiViewSet(mixins.ListModelMixin,
         max_cost: int = self.request.query_params.get('max_cost')
         min_quantity: int = self.request.query_params.get('min_quantity')
         max_quantity: int = self.request.query_params.get('max_quantity')
-        status: Product.ProductStatus = self.request.query_params.get('status')
+        product_status: Product.ProductStatus = self.request.query_params.get('status')
         category_name: Category = self.request.query_params.get('category_name')
         if name is not None:
             queryset = queryset.filter(name__startswith=name)
@@ -60,8 +61,8 @@ class ProductApiViewSet(mixins.ListModelMixin,
         if max_quantity is not None:
             queryset = queryset.filter(quantity__lte=max_quantity)
 
-        if status is not None:
-            queryset = queryset.filter(status=status)
+        if product_status is not None:
+            queryset = queryset.filter(status=product_status)
 
         if category_name is not None:
             queryset = queryset.filter(category__name__startswith=category_name)
@@ -83,6 +84,7 @@ class ProductAdminApiViewSet(GenericViewSet):
     QUANTITY_IDX: int = 2
     STATUS_IDX: int = 3
     CATEGORY_ID_IDX: int = 4
+
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     parser_classes = (MultiPartParser,)
@@ -104,10 +106,11 @@ class ProductAdminApiViewSet(GenericViewSet):
             file.close()
 
     def __processing_product_line(self, line: str) -> None:
+        min_value_validator = MinValueValidator(0, message='value must be over 0')
         values: list = self.__is_valid_line(line)
         Product.objects.create(name=values[ProductAdminApiViewSet.NAME_IDX],
-                               cost=int(values[ProductAdminApiViewSet.COST_IDX]),
-                               quantity=int(values[ProductAdminApiViewSet.QUANTITY_IDX]),
+                               cost=min_value_validator(int(values[ProductAdminApiViewSet.COST_IDX])),
+                               quantity=min_value_validator(int(values[ProductAdminApiViewSet.QUANTITY_IDX])),
                                status=values[ProductAdminApiViewSet.STATUS_IDX],
                                category_id=int(values[ProductAdminApiViewSet.CATEGORY_ID_IDX]))
 

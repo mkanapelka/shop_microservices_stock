@@ -39,34 +39,21 @@ class ProductApiViewSet(mixins.ListModelMixin,
         return Response(product)
 
     def __get_dynamic_queryset(self, queryset):
-        name: str = self.request.query_params.get('name')
-        min_cost: int = self.request.query_params.get('min_cost')
-        max_cost: int = self.request.query_params.get('max_cost')
-        min_quantity: int = self.request.query_params.get('min_quantity')
-        max_quantity: int = self.request.query_params.get('max_quantity')
-        product_status: Product.ProductStatus = self.request.query_params.get('status')
-        category_name: Category = self.request.query_params.get('category_name')
-        if name is not None:
-            queryset = queryset.filter(name__startswith=name)
-
-        if min_cost is not None:
-            queryset = queryset.filter(cost__gte=min_cost)
-
-        if max_cost is not None:
-            queryset = queryset.filter(cost__lte=max_cost)
-
-        if min_quantity is not None:
-            queryset = queryset.filter(quantity__gte=min_quantity)
-
-        if max_quantity is not None:
-            queryset = queryset.filter(quantity__lte=max_quantity)
-
-        if product_status is not None:
-            queryset = queryset.filter(status=product_status)
-
-        if category_name is not None:
-            queryset = queryset.filter(category__name__startswith=category_name)
-
+        product_like_parameters: tuple = ('name', 'category_name')
+        product_gte_parameters: tuple = ('min_cost', 'min_quantity')
+        product_lte_parameters: tuple = ('max_cost', 'max_quantity')
+        product_eq_parameters: tuple = ('status',)
+        prefix_for_gte_parameters: str = 'min_'
+        prefix_for_lte_parameters: str = 'max_'
+        for name_of_param, param in self.request.query_params.items():
+            if name_of_param in product_like_parameters:
+                queryset = queryset.filter((name_of_param + "__startswith", param))
+            if name_of_param in product_gte_parameters:
+                queryset = queryset.filter((name_of_param[len(prefix_for_gte_parameters):] + "__gte", param))
+            if name_of_param in product_lte_parameters:
+                queryset = queryset.filter((name_of_param[len(prefix_for_lte_parameters):] + "__lte", param))
+            if name_of_param in product_eq_parameters:
+                queryset = queryset.filter((name_of_param, param))
         return queryset
 
     def __quantity_validation(self, received_quantity: int) -> bool:

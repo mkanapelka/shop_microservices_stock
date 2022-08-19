@@ -1,14 +1,11 @@
-from typing import io
-
 from django.db import transaction
-from django.core.validators import MinValueValidator
-from rest_framework import mixins, serializers, status
+from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from stock.models import Product, Category
+from stock.models import Product
 from stock.serializers.product import ProductSerializer
 from stock.service.product import ProductServiceImpl
 

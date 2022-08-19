@@ -66,7 +66,7 @@ class ProductServiceImpl(ProductService):
         return product
 
     def add_products_from_file(self, request, *args, **kwargs):
-        # TODO: refactor this
+        # TODO: refactor this, maybe add serializers
         file_uploaded = request.request.FILES.get('file')
         if file_uploaded is None:
             raise Exception("File wasn't uploaded")

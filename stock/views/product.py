@@ -23,6 +23,7 @@ class ProductApiViewSet(mixins.ListModelMixin,
         queryset = Product.objects.all()
         return self.product_service.get_dynamic_queryset(self.request, queryset)
 
+    @transaction.atomic(durable=True)
     @action(methods=['patch'], detail=True)
     def update_quantity(self, request, *args, **kwargs):
         product: Product = self.product_service.update_quantity(request, *args, **kwargs)

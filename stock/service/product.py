@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db.models import QuerySet
 from rest_framework import serializers
 
-from stock.models import Product
+from stock.models import Product, Category
 
 
 class ProductService(ABC):
@@ -65,13 +65,15 @@ class ProductServiceImpl(ProductService):
             product = product.save()
         return product
 
-    def add_products_from_file(self, request, *args, **kwargs):
-        # TODO: refactor this, maybe add serializers
+    def add_products_from_file(self, request, *args, **kwargs) -> list:
         file_uploaded = request.request.FILES.get('file')
         if file_uploaded is None:
             raise Exception("File wasn't uploaded")
-        self.__processing_uploaded_file(file_uploaded)
-        pass
+        products: list = list()
+        for line in file_uploaded.readlines():
+            product = self.__get_product_from_product_line(line.decode('utf-8'))
+            products.append(product)
+        return products
 
     def __quantity_validation(self, received_quantity: int) -> bool:
         if received_quantity is None:
@@ -80,31 +82,19 @@ class ProductServiceImpl(ProductService):
             raise serializers.ValidationError("Quantity must be int")
         return True
 
-    def __processing_uploaded_file(self, file: io.BinaryIO) -> None:
-        try:
-            for line in file.readlines():
-                self.__processing_product_line(line.decode('utf-8'))
-        finally:
-            file.close()
-
-    def __processing_product_line(self, line: str) -> None:
+    def __get_product_from_product_line(self, line: str) -> Product:
         values: list = self.__is_valid_line(line)
-        Product.objects.create(name=values[self.NAME_IDX],
-                               cost=int(values[self.COST_IDX]),
-                               quantity=int(values[self.QUANTITY_IDX]),
-                               status=values[self.STATUS_IDX],
-                               category_id=int(values[self.CATEGORY_ID_IDX]))
+        return Product(name=values[self.NAME_IDX],
+                       cost=int(values[self.COST_IDX]),
+                       quantity=int(values[self.QUANTITY_IDX]),
+                       status=values[self.STATUS_IDX],
+                       category=Category.objects.get(pk=int(values[self.CATEGORY_ID_IDX])))
 
     def __is_valid_line(self, line: str) -> list:
-        min_value_validator = MinValueValidator(0, message='value must be over 0')
         line.strip()
         if line is None or line == '':
             raise Exception("Incorrect line, please review file")
         values: list = line.split(self.SEPARATOR)
         if len(values) != 5:
             raise Exception("Incorrect line, please review file")
-        cost: int = int(values[self.COST_IDX])
-        quantity: int = int(values[self.QUANTITY_IDX])
-        min_value_validator(cost)
-        min_value_validator(quantity)
         return values

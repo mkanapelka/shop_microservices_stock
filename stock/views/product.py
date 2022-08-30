@@ -38,5 +38,9 @@ class ProductAdminApiViewSet(GenericViewSet):
     @transaction.atomic(durable=True)
     @action(methods=['put'], url_path='upload', detail=True)
     def add_products_from_file(self, request, *args, **kwargs):
-        self.product_service.add_products_from_file(self, request, *args, **kwargs)
+        products = self.product_service.add_products_from_file(self, request, *args, **kwargs)
+        for product in products:
+            serializer = ProductSerializer(data=product.__dict__)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(category_id=product.category_id)
         return Response(status=status.HTTP_200_OK)
